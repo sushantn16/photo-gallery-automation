@@ -24,6 +24,9 @@ const YEAR = new Date().getFullYear();
         color:var(--fg);
         font:16px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Oxygen,Ubuntu,Cantarell,sans-serif;
         -webkit-font-smoothing:antialiased;
+        min-height:100vh;
+        display:flex;
+        flex-direction:column;
       }
 
       /* Header */
@@ -33,7 +36,7 @@ const YEAR = new Date().getFullYear();
         padding:32px 24px 24px;
         border-bottom:1px solid rgba(255,255,255,.08);
       }
-      .header-content{display:flex;justify-content:flex-start;align-items:flex-start;gap:24px;flex-wrap:wrap}
+      .header-content{display:flex;justify-content:space-between;align-items:flex-start;gap:24px;flex-wrap:wrap}
       .header-text h1{margin:0 0 8px;font-size:2rem;font-weight:700;letter-spacing:-.02em}
       .header-text p{margin:0;color:var(--muted);font-size:1rem}
 
@@ -64,6 +67,8 @@ const YEAR = new Date().getFullYear();
         color:var(--muted);
         font-size:.9rem;
       }
+
+      main{flex:1;}
 
       /* Masonry Grid */
       .grid{
@@ -247,7 +252,14 @@ const YEAR = new Date().getFullYear();
         .nav-next{right:8px}
       }
 
-      footer{color:var(--muted);text-align:center;margin:40px 0 60px;font-size:.9rem}
+      footer{
+        color:var(--muted);
+        text-align:center;
+        margin:40px 0 60px;
+        font-size:.9rem;
+        margin-top:auto;
+        padding:0 24px;
+      }
       .empty{max-width:1400px;margin:60px auto;color:#bbb;padding:0 24px;text-align:center;font-size:1.1rem}
     </style>
   </head>

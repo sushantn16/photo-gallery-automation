@@ -11,6 +11,7 @@
     "build:images": "node tools/build-manifest.mjs",
     "upload:r2": "node tools/upload-to-r2.mjs",
     "dev": "astro dev",
+    "prebuild": "npm run build:images",
     "build": "astro build",
     "preview": "astro preview",
     "astro": "astro"
