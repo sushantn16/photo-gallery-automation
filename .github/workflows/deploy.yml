@@ -33,9 +33,6 @@ jobs:
 
       - name: Build project for tests
         run: npm run build
-        env:
-          GITHUB_ACTIONS: true
-          GITHUB_REPOSITORY: ${{ github.repository }}
 
       - name: Install Playwright Browsers
         run: npx playwright install --with-deps chromium
