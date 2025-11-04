@@ -55,9 +55,6 @@ jobs:
 
       - name: Build project
         run: npm run build
-        env:
-          GITHUB_ACTIONS: true
-          GITHUB_REPOSITORY: ${{ github.repository }}
 
       - name: Check build output
         run: |
