@@ -6,107 +6,508 @@ const YEAR = new Date().getFullYear();
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <title>Gallery</title>
+    <title>Stilllight</title>
     <meta name="description" content="A fast, minimal photo gallery." />
     <style>
-      :root { --gap:12px; --bg:#0b0b0c; --fg:#eee; --muted:#9a9aa0; }
-      *{box-sizing:border-box}
-      body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.45 system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
-      header{max-width:1100px;margin:0 auto;padding:28px 18px 8px}
-      header h1{margin:0 0 4px;font-size:1.25rem}
-      header p{margin:0;color:var(--muted)}
-      .grid{max-width:1100px;margin:16px auto 60px;padding:0 18px;display:grid;gap:var(--gap);
-            grid-template-columns:repeat(auto-fill,minmax(220px,1fr))}
-      .card{position:relative;overflow:hidden;border-radius:14px}
-      .card img{width:100%;height:100%;object-fit:cover;display:block;background:#151518;aspect-ratio:4/3;transition:transform .25s ease}
-      .card:hover img{transform:scale(1.02)}
-      .caption{position:absolute;left:10px;bottom:10px;padding:4px 8px;border-radius:999px;font-size:.8rem;background:rgba(0,0,0,.45);backdrop-filter:blur(6px)}
-      dialog{width:92vw;max-width:1200px;border:0;padding:0;border-radius:16px;background:#000;color:#fff}
-      dialog::backdrop{background:rgba(0,0,0,.75)}
-      .x{position:absolute;top:8px;right:8px;border:0;background:rgba(0,0,0,.5);color:#fff;border-radius:10px;padding:6px 10px;cursor:pointer}
-      .lb{position:relative;display:grid;gap:10px;padding:10px}
-      footer{color:var(--muted);text-align:center;margin:30px 0 50px;font-size:.9rem}
-      .empty{max-width:1100px;margin:24px auto;color:#bbb;padding:0 18px}
+      :root {
+        --gap:16px;
+        --bg:#0a0a0a;
+        --fg:#f5f5f5;
+        --muted:#999;
+        --card-bg:#1a1a1a;
+        --accent:#3b82f6;
+      }
+      *{box-sizing:border-box;margin:0;padding:0}
+      body{
+        margin:0;
+        background:var(--bg);
+        color:var(--fg);
+        font:16px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Oxygen,Ubuntu,Cantarell,sans-serif;
+        -webkit-font-smoothing:antialiased;
+      }
+
+      /* Header */
+      header{
+        max-width:1400px;
+        margin:0 auto;
+        padding:32px 24px 24px;
+        border-bottom:1px solid rgba(255,255,255,.08);
+      }
+      .header-content{display:flex;justify-content:flex-start;align-items:flex-start;gap:24px;flex-wrap:wrap}
+      .header-text h1{margin:0 0 8px;font-size:2rem;font-weight:700;letter-spacing:-.02em}
+      .header-text p{margin:0;color:var(--muted);font-size:1rem}
+
+      /* Loading state */
+      .loader{
+        max-width:1400px;
+        margin:60px auto;
+        padding:0 24px;
+        text-align:center;
+        color:var(--muted);
+      }
+      .spinner{
+        display:inline-block;
+        width:40px;
+        height:40px;
+        border:3px solid rgba(255,255,255,.1);
+        border-top-color:var(--accent);
+        border-radius:50%;
+        animation:spin 1s linear infinite;
+      }
+      @keyframes spin{to{transform:rotate(360deg)}}
+
+      /* Photo count */
+      .photo-count{
+        max-width:1400px;
+        margin:16px auto 0;
+        padding:0 24px;
+        color:var(--muted);
+        font-size:.9rem;
+      }
+
+      /* Masonry Grid */
+      .grid{
+        max-width:1400px;
+        margin:24px auto 80px;
+        padding:0 24px;
+        column-count:4;
+        column-gap:var(--gap);
+      }
+      @media(max-width:1200px){.grid{column-count:3}}
+      @media(max-width:768px){.grid{column-count:2}}
+      @media(max-width:480px){.grid{column-count:1}}
+
+      .card{
+        position:relative;
+        break-inside:avoid;
+        margin-bottom:var(--gap);
+        background:var(--card-bg);
+        border-radius:16px;
+        overflow:hidden;
+        cursor:pointer;
+        transition:transform .2s ease,box-shadow .2s ease;
+      }
+      .card:hover{transform:translateY(-4px);box-shadow:0 12px 40px rgba(0,0,0,.5)}
+      .card img{
+        width:100%;
+        height:auto;
+        display:block;
+        background:#0f0f0f;
+        transition:filter .3s ease,transform .3s ease,opacity .3s ease;
+      }
+      .card:hover img{
+        filter:blur(4px);
+        transform:scale(1.03);
+      }
+      .card-overlay{
+        position:absolute;
+        inset:0;
+        display:flex;
+        flex-direction:column;
+        align-items:center;
+        justify-content:center;
+        gap:6px;
+        padding:24px;
+        background:rgba(0,0,0,.55);
+        color:var(--fg);
+        text-align:center;
+        opacity:0;
+        pointer-events:none;
+        transition:opacity .2s ease;
+      }
+      .card-overlay p{
+        margin:0;
+        font-size:.9rem;
+        letter-spacing:.01em;
+      }
+      .card:hover .card-overlay{opacity:1}
+
+      /* Lightbox Dialog */
+      dialog{
+        width:95vw;
+        max-width:1400px;
+        max-height:95vh;
+        border:0;
+        padding:0;
+        border-radius:20px;
+        background:#0f0f0f;
+        color:#fff;
+        box-shadow:0 20px 60px rgba(0,0,0,.8);
+      }
+      dialog::backdrop{background:rgba(0,0,0,.85);backdrop-filter:blur(4px)}
+
+      .lb{
+        position:relative;
+        display:grid;
+        gap:0;
+        padding:0;
+        max-height:95vh;
+        overflow:hidden;
+      }
+      .lb-content{
+        display:grid;
+        grid-template-columns:1fr auto;
+        gap:0;
+        max-height:95vh;
+      }
+      @media(max-width:900px){.lb-content{grid-template-columns:1fr;grid-template-rows:auto 1fr}}
+
+      .lb-image-container{
+        position:relative;
+        display:flex;
+        align-items:center;
+        justify-content:center;
+        background:#000;
+        overflow:hidden;
+        max-height:95vh;
+      }
+      .lb img{
+        max-width:100%;
+        max-height:95vh;
+        width:auto;
+        height:auto;
+        object-fit:contain;
+        display:block;
+      }
+
+      .lb-sidebar{
+        width:320px;
+        background:#0f0f0f;
+        border-left:1px solid rgba(255,255,255,.1);
+        padding:24px;
+        overflow-y:auto;
+        max-height:95vh;
+      }
+      @media(max-width:900px){
+        .lb-sidebar{
+          width:100%;
+          border-left:0;
+          border-top:1px solid rgba(255,255,255,.1);
+          max-height:40vh;
+        }
+      }
+
+      .lb-title{font-size:1.1rem;font-weight:600;margin-bottom:20px;word-break:break-word}
+      .meta-section{margin-bottom:24px}
+      .meta-section h3{font-size:.85rem;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin-bottom:12px;font-weight:600}
+      .meta-row{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.06);font-size:.9rem}
+      .meta-row:last-child{border-bottom:0}
+      .meta-label{color:var(--muted);flex-shrink:0;margin-right:16px}
+      .meta-value{text-align:right;word-break:break-word;color:var(--fg)}
+
+      /* Dialog controls */
+      .dlg-controls{
+        position:absolute;
+        top:16px;
+        right:16px;
+        z-index:10;
+        display:flex;
+        gap:8px;
+      }
+      .dlg-btn{
+        border:0;
+        background:rgba(0,0,0,.7);
+        color:#fff;
+        border-radius:12px;
+        padding:10px 14px;
+        cursor:pointer;
+        font-size:1.2rem;
+        transition:background .2s ease;
+        backdrop-filter:blur(10px);
+        -webkit-backdrop-filter:blur(10px);
+      }
+      .dlg-btn:hover{background:rgba(0,0,0,.9)}
+
+      .nav-btn{
+        position:absolute;
+        top:50%;
+        transform:translateY(-50%);
+        border:0;
+        background:rgba(0,0,0,.7);
+        color:#fff;
+        border-radius:12px;
+        padding:16px 12px;
+        cursor:pointer;
+        font-size:1.5rem;
+        transition:all .2s ease;
+        backdrop-filter:blur(10px);
+        -webkit-backdrop-filter:blur(10px);
+        z-index:10;
+      }
+      .nav-btn:hover{background:rgba(0,0,0,.9);transform:translateY(-50%) scale(1.1)}
+      .nav-btn:disabled{opacity:.3;cursor:not-allowed}
+      .nav-prev{left:16px}
+      .nav-next{right:16px}
+      @media(max-width:900px){
+        .nav-prev{left:340px}
+      }
+      @media(max-width:600px){
+        .nav-btn{padding:12px 10px;font-size:1.2rem}
+        .nav-prev{left:8px}
+        .nav-next{right:8px}
+      }
+
+      footer{color:var(--muted);text-align:center;margin:40px 0 60px;font-size:.9rem}
+      .empty{max-width:1400px;margin:60px auto;color:#bbb;padding:0 24px;text-align:center;font-size:1.1rem}
     </style>
   </head>
   <body>
     <header>
-      <h1>Gallery</h1>
-      <p>Favorites. Minimal. Fast.</p>
+      <div class="header-content">
+        <div class="header-text">
+          <h1>Stilllight</h1>
+          <p>Capturing moments, preserving memories</p>
+        </div>
+      </div>
     </header>
 
+    <div class="photo-count" id="photo-count"></div>
+
     <main id="app">
+      <div class="loader" id="loader">
+        <div class="spinner"></div>
+        <p style="margin-top:16px">Loading photos...</p>
+      </div>
       <div class="grid" id="grid"></div>
       <p class="empty" id="empty" style="display:none">No photos yet.</p>
     </main>
 
     <dialog id="dlg">
-      <form method="dialog">
-        <button class="x" value="close" aria-label="Close">✕</button>
-        <div class="lb">
-          <img id="dlg-img" alt="" />
-          <div id="dlg-meta" style="color:#bdbdc4;font-size:.9rem"></div>
+      <div class="dlg-controls">
+        <button class="dlg-btn" id="close-btn" aria-label="Close">✕</button>
+      </div>
+      <div class="lb">
+        <div class="lb-content">
+          <div class="lb-image-container">
+            <button class="nav-btn nav-prev" id="prev-btn" aria-label="Previous">‹</button>
+            <img id="dlg-img" alt="" />
+            <button class="nav-btn nav-next" id="next-btn" aria-label="Next">›</button>
+          </div>
+          <div class="lb-sidebar">
+            <div class="lb-title" id="dlg-title"></div>
+            <div id="dlg-meta"></div>
+          </div>
         </div>
-      </form>
+      </div>
     </dialog>
 
-    <footer>© {YEAR} Gallery</footer>
+    <footer>© {YEAR} Stilllight</footer>
 
-    <script type="module">
+    <script is:inline>
       const MANIFEST_URL = "https://pub-a92fe7c6ece0458c914ad88d5101a063.r2.dev/manifest.json";
+
+      // Elements
       const grid = document.getElementById('grid');
       const empty = document.getElementById('empty');
+      const loader = document.getElementById('loader');
+      const photoCount = document.getElementById('photo-count');
       const dlg = document.getElementById('dlg');
       const dlgImg = document.getElementById('dlg-img');
+      const dlgTitle = document.getElementById('dlg-title');
       const dlgMeta = document.getElementById('dlg-meta');
+      const closeBtn = document.getElementById('close-btn');
+      const prevBtn = document.getElementById('prev-btn');
+      const nextBtn = document.getElementById('next-btn');
 
+      // State
+      let allItems = [];
+      let currentIndex = -1;
+
+      // Format EXIF data
+      function formatExifValue(key, value) {
+        if (!value) return null;
+        if (key === 'CreateDate' && value) {
+          const date = new Date(value);
+          return date.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+        }
+        if (key === 'ExposureTime') {
+          const numeric = Number(value);
+          if (!Number.isNaN(numeric) && numeric > 0) {
+            if (numeric >= 1) return `${numeric}s`;
+            const denominator = Math.round(1 / numeric);
+            if (denominator) return `1/${denominator}s`;
+          }
+          return `${value}s`;
+        }
+        if (key === 'FNumber') return `f/${value}`;
+        if (key === 'ISO') return `ISO ${value}`;
+        return String(value).trim();
+      }
+
+      // Render EXIF metadata
+      function renderMetadata(item) {
+        if (!item.exif) return '';
+
+        // Camera Info
+        const camera = [];
+        if (item.exif.Make || item.exif.Model) {
+          const cameraRows = [];
+          if (item.exif.Make) cameraRows.push(`<div class="meta-row"><span class="meta-label">Camera</span><span class="meta-value">${item.exif.Make}</span></div>`);
+          if (item.exif.Model) cameraRows.push(`<div class="meta-row"><span class="meta-label">Model</span><span class="meta-value">${item.exif.Model}</span></div>`);
+          if (item.exif.LensModel) cameraRows.push(`<div class="meta-row"><span class="meta-label">Lens</span><span class="meta-value">${item.exif.LensModel}</span></div>`);
+          camera.push(`<div class="meta-section"><h3>Camera</h3>${cameraRows.join('')}</div>`);
+        }
+
+        // Settings
+        const settings = [];
+        const settingRows = [];
+        if (item.exif.ISO) settingRows.push(`<div class="meta-row"><span class="meta-label">ISO</span><span class="meta-value">${formatExifValue('ISO', item.exif.ISO)}</span></div>`);
+        if (item.exif.FNumber) settingRows.push(`<div class="meta-row"><span class="meta-label">Aperture</span><span class="meta-value">${formatExifValue('FNumber', item.exif.FNumber)}</span></div>`);
+        if (item.exif.ExposureTime) settingRows.push(`<div class="meta-row"><span class="meta-label">Shutter</span><span class="meta-value">${formatExifValue('ExposureTime', item.exif.ExposureTime)}</span></div>`);
+        if (settingRows.length) settings.push(`<div class="meta-section"><h3>Settings</h3>${settingRows.join('')}</div>`);
+
+        // Date
+        const dateSection = [];
+        if (item.exif.CreateDate) {
+          dateSection.push(`<div class="meta-section"><h3>Date</h3><div class="meta-row"><span class="meta-label">Taken</span><span class="meta-value">${formatExifValue('CreateDate', item.exif.CreateDate)}</span></div></div>`);
+        }
+
+        return [...camera, ...settings, ...dateSection].join('');
+      }
+
+      function escapeHtml(value) {
+        if (value == null) return '';
+        return String(value)
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+          .replace(/"/g, '&quot;')
+          .replace(/'/g, '&#39;');
+      }
+
+      function getDisplayTitle(item) {
+        const exif = item?.exif || {};
+        const cameraParts = [exif.Make, exif.Model].filter(Boolean).join(' ');
+        if (cameraParts) return cameraParts;
+        if (exif.CreateDate) return formatExifValue('CreateDate', exif.CreateDate);
+        return '';
+      }
+
+      function buildCardOverlay(item) {
+        const exif = item?.exif || {};
+        const lines = [];
+        const camera = [exif.Make, exif.Model].filter(Boolean).join(' ');
+        if (camera) lines.push(camera);
+
+        const settings = [];
+        if (exif.FNumber) settings.push(formatExifValue('FNumber', exif.FNumber));
+        if (exif.ExposureTime) settings.push(formatExifValue('ExposureTime', exif.ExposureTime));
+        if (exif.ISO) settings.push(formatExifValue('ISO', exif.ISO));
+        if (settings.length) lines.push(settings.join(' · '));
+
+        if (exif.CreateDate) lines.push(formatExifValue('CreateDate', exif.CreateDate));
+
+        if (!lines.length) return '';
+        return `<div class="card-overlay">${lines.map(line => `<p>${escapeHtml(line)}</p>`).join('')}</div>`;
+      }
+
+      // Render grid
+      function renderGrid() {
+        const items = allItems;
+        grid.innerHTML = '';
+
+        if (!items.length) {
+          empty.style.display = 'block';
+          empty.textContent = 'No photos yet.';
+          photoCount.textContent = '';
+          return;
+        }
+
+        empty.style.display = 'none';
+        photoCount.textContent = `${items.length} photo${items.length !== 1 ? 's' : ''}`;
+
+        const frag = document.createDocumentFragment();
+        items.forEach((item, idx) => {
+          const title = getDisplayTitle(item);
+          const overlay = buildCardOverlay(item);
+          const safeAlt = escapeHtml(title || 'Photo');
+          const card = document.createElement('div');
+          card.className = 'card';
+          card.dataset.index = idx;
+          card.innerHTML = `
+            <img loading="lazy" src="${item.thumb}"
+                 srcset="${item.thumb} 480w, ${item.full} 1600w"
+                 sizes="(max-width: 600px) 100vw, 300px"
+                 alt="${safeAlt}">
+            ${overlay}
+          `;
+          frag.appendChild(card);
+        });
+        grid.appendChild(frag);
+      }
+
+      // Open lightbox
+      function openLightbox(index) {
+        currentIndex = index;
+        const item = allItems[currentIndex];
+
+        dlgImg.src = item.full;
+        const title = getDisplayTitle(item);
+        dlgImg.alt = title || 'Photo';
+        dlgTitle.textContent = title || 'Untitled';
+        dlgMeta.innerHTML = renderMetadata(item);
+
+        // Update nav buttons
+        prevBtn.disabled = currentIndex === 0;
+        nextBtn.disabled = currentIndex === allItems.length - 1;
+
+        dlg.showModal();
+      }
+
+      // Navigate lightbox
+      function navigateLightbox(direction) {
+        const newIndex = currentIndex + direction;
+        if (newIndex >= 0 && newIndex < allItems.length) {
+          openLightbox(newIndex);
+        }
+      }
+
+      // Load photos
       async function load() {
         try {
+          loader.style.display = 'block';
           const res = await fetch(MANIFEST_URL, { cache: 'no-cache' });
           if (!res.ok) throw new Error('manifest fetch failed');
           const { items = [] } = await res.json();
-          if (!items.length) { empty.style.display = 'block'; return; }
 
-          const frag = document.createDocumentFragment();
-          for (const it of items) {
-            const a = document.createElement('a');
-            a.className = 'card';
-            a.href = it.full;
-            a.dataset.full = it.full;
-            a.setAttribute('aria-label', it.title || '');
-            a.innerHTML = `
-              <img loading="lazy" src="${it.thumb}"
-                   srcset="${it.thumb} 480w, ${it.full} 1600w"
-                   sizes="(max-width: 600px) 100vw, 33vw"
-                   alt="${it.title || ''}">
-              <span class="caption">${it.title || ''}</span>
-            `;
-            frag.appendChild(a);
-          }
-          grid.appendChild(frag);
+          allItems = items;
+
+          loader.style.display = 'none';
+          renderGrid();
         } catch (e) {
+          loader.style.display = 'none';
           empty.style.display = 'block';
           empty.textContent = 'Could not load photos.';
           console.error(e);
         }
       }
 
+      // Event listeners
       grid.addEventListener('click', e => {
-        const a = e.target.closest('a.card'); if (!a) return;
-        e.preventDefault();
-        dlgImg.src = a.dataset.full;
-        dlgImg.alt = a.getAttribute('aria-label') || '';
-        // optional simple EXIF preview if present in manifest
-        const meta = {}; // you can enrich this later
-        dlgMeta.textContent = '';
-        dlg.showModal();
+        const card = e.target.closest('.card');
+        if (!card) return;
+        const index = parseInt(card.dataset.index, 10);
+        openLightbox(index);
       });
 
+      closeBtn.addEventListener('click', () => dlg.close());
+      prevBtn.addEventListener('click', () => navigateLightbox(-1));
+      nextBtn.addEventListener('click', () => navigateLightbox(1));
+
+      // Keyboard navigation
+      document.addEventListener('keydown', e => {
+        if (!dlg.open) return;
+        if (e.key === 'Escape') dlg.close();
+        if (e.key === 'ArrowLeft') navigateLightbox(-1);
+        if (e.key === 'ArrowRight') navigateLightbox(1);
+      });
+
+      // Click backdrop to close
       dlg.addEventListener('click', e => {
-        const r = dlg.querySelector('form').getBoundingClientRect();
-        if (e.clientX < r.left || e.clientX > r.right || e.clientY < r.top || e.clientY > r.bottom) dlg.close();
+        if (e.target === dlg) dlg.close();
       });
 
+      // Load on page load
       load();
     </script>
   </body>

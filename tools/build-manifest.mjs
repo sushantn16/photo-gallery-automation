@@ -2,7 +2,7 @@ import sharp from "sharp";
 import { globby } from "globby";
 import { mkdir, writeFile } from "fs/promises";
 import { basename } from "path";
-import * as exifr from "exifr";
+import exifr from "exifr";
 
 const SRC = "./originals";
 const OUT_THUMB = "./public/thumb";
