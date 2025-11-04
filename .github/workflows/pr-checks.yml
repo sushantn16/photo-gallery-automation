@@ -24,8 +24,8 @@ jobs:
       - name: Build project for tests
         run: npm run build
         env:
-          # Don't set GITHUB_ACTIONS/GITHUB_REPOSITORY so tests run with base: "/"
-          CI: true
+          # Override GITHUB_ACTIONS to prevent base path from being set for tests
+          GITHUB_ACTIONS: false
 
       - name: Install Playwright Browsers
         run: npx playwright install --with-deps chromium
